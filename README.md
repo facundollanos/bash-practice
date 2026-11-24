@@ -104,3 +104,46 @@ rechazada. Se probaron consultas reales de disco y recolección de diagnóstico.
 El sandbox no permite abrir un servidor HTTP local, por lo que la conectividad
 HTTP real no se probó. Los scripts de Docker, SSH y PostgreSQL requieren
 sus propios entornos de integración; no se realizaron despliegues ni migraciones.
+
+## Nuevos ejemplos: 08 a 10
+
+### 08. Respaldar una carpeta
+
+```bash
+bash 08-respaldar-carpeta.sh ./mi-proyecto ./backups
+```
+
+Crea un tar.gz único, privado, y comprueba integridad gzip. El destino debe estar
+fuera del origen. No elimina respaldos antiguos. Si tar falla elimina el archivo
+incompleto. No sustituye una prueba de restauración ni un snapshot consistente
+para datos que cambian mientras se copian. No usar para bases de datos activas.
+Requiere realpath, mktemp, tar y gzip (GNU/Linux).
+
+### 09. Descargar y comprobar integridad
+
+```bash
+bash 09-descargar-verificado.sh 'https://servidor/archivo.zip' ./archivo.zip SHA256_REAL
+```
+
+Reemplazá SHA256_REAL por los 64 caracteres publicados por una fuente confiable.
+Permite únicamente HTTPS, también en redirecciones, verifica SHA256 y publica el
+archivo solo si coincide. No ejecuta lo descargado ni sobrescribe el destino.
+Requiere curl, sha256sum, mktemp y ln; el sistema de archivos debe admitir enlaces
+duros. El hash comprueba coincidencia; si lo obtuviste del mismo sitio comprometido
+que el archivo, no demuestra autenticidad. La carpeta destino debe existir.
+
+### 10. Evitar ejecuciones simultáneas
+
+```bash
+mkdir -p "$HOME/.local/state/bash-practice"
+bash 10-ejecutar-con-bloqueo.sh \
+  "$HOME/.local/state/bash-practice/backup.lock" \
+  bash 08-respaldar-carpeta.sh ./mi-proyecto ./backups
+```
+
+Útil para tareas cron: si otra ejecución tiene el bloqueo, devuelve 75. Si logra
+adquirirlo devuelve el código del comando ejecutado. Usá una carpeta privada y el
+mismo lock en todas las ejecuciones. No borrar el archivo lock mientras hay tareas
+activas. El comando debe permanecer en primer plano hasta terminar; no lanzar un
+servicio con &. Los procesos hijos pueden heredar el descriptor del bloqueo.
+Requiere flock (util-linux); pensado para disco local, no almacenamiento de red.

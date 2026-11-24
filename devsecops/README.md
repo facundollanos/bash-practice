@@ -172,3 +172,60 @@ qué corregiste y cómo verificaste la corrección. Eso vale más que acumular a
 Sintaxis bash -n y pruebas de argumentos, propagación de códigos y creación de
 reportes con dobles locales de herramientas. No se ejecutaron escáneres reales,
 no se instaló software y no se enviaron peticiones a aplicaciones.
+
+## Nuevos ejemplos: 06 a 08
+
+### 06. Checkov: infraestructura como código
+
+```bash
+bash 06-checkov-iac.sh /ruta/infra terraform
+bash 06-checkov-iac.sh /ruta/manifiestos kubernetes
+```
+
+También admite dockerfile y github_actions. Requiere Checkov instalado; por
+ ejemplo, en un entorno virtual dedicado: python -m pip install checkov.
+No aplica infraestructura ni descarga módulos externos de Terraform; por ello
+la cobertura de esos módulos puede quedar incompleta. Guarda checkov.json y el
+código de salida original. 0 indica que pasó según la configuración efectiva;
+un fallo puede ser incumplimiento de políticas o error de ejecución: leer el
+reporte y stderr. No equivale a una certificación de seguridad. Checkov puede
+leer configuración propia del proyecto; revisala para conocer exclusiones.
+Documentación: https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
+
+### 07. Permisos de archivos
+
+```bash
+bash 07-auditar-permisos.sh /ruta/proyecto
+```
+
+Busca archivos y carpetas con escritura para otros y archivos SUID/SGID. No cambia
+permisos, sigue enlaces ni cruza sistemas de archivos. Guarda listas delimitadas
+por NUL y una versión de texto con rutas escapadas. Una coincidencia no implica
+una vulnerabilidad: /tmp, por ejemplo, suele permitir escritura y usar sticky bit.
+Revisar propietario, sticky bit, necesidad real y contexto. No inspecciona ACL,
+capabilities ni permisos de todos los directorios ascendientes.
+Códigos: 0 sin coincidencias, 1 coincidencias, 2 inspección incompleta.
+Requiere GNU find y realpath. No necesitás sudo salvo que el alcance lo requiera.
+
+### 08. Vencimiento de certificado local
+
+```bash
+bash 08-comprobar-certificado.sh /ruta/certificado.pem 30
+```
+
+Requiere OpenSSL. Lee el primer certificado X.509 del archivo PEM y avisa si ya
+venció o vencerá dentro de 30 días. No introducir una clave privada. No realiza
+conexiones, no renueva certificados y no evalúa cadena de confianza, hostname,
+revocación ni fecha de inicio de validez. Sirve como control de vencimiento,
+no como auditoría TLS completa. Guarda metadatos del certificado en un reporte.
+Códigos: 0 fuera del umbral, 1 alerta, 2 error de lectura, 64 argumentos inválidos.
+Documentación: https://docs.openssl.org/3.0/man1/openssl-x509/
+
+### Verificación de esta tanda
+
+Los seis scripts nuevos pasaron bash -n. Se probaron respaldo y extracción,
+rechazo de destino dentro del origen, descarga con curl simulado (hash correcto,
+incorrecto y fallo de red), bloqueo concurrente y propagación de errores,
+permisos con archivos temporales y certificados generados localmente con OpenSSL.
+Checkov se verificó con un doble de herramienta, no con un análisis real.
+No se descargaron archivos de Internet ni se modificaron servicios.
