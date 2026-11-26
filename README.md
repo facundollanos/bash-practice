@@ -190,3 +190,45 @@ No valida el contenido de respuestas ni configura autenticación. No pongas
 tokens o credenciales en URLs: se imprimen en el reporte.
 Salida 0 si todas pasan, 1 si alguna falla, 64 si no hay URLs o los argumentos
 son inválidos. Requiere curl. Ejemplo de integración: guardar stdout como TSV.
+
+## Tanda inspirada en Cybersecurity Ops with bash: 14 a 16
+
+Ejercicios originales basados en los temas del libro, no transcripciones.
+
+### 14. Inventario de archivos
+
+```bash
+bash 14-inventariar-archivos.sh /ruta/carpeta > /tmp/inventario.tsv
+```
+
+Recolecta tamaño, fecha de modificación Unix, permisos y ruta escapada con printf
+%q. No lee el contenido ni sigue enlaces; no cruza sistemas de archivos. Requiere
+GNU find, stat y realpath. Guardá el reporte FUERA del origen para no incluir el
+propio reporte mientras cambia. Un error de acceso o archivo que desaparezca
+produce fallo; el inventario no es un snapshot atómico ni un backup.
+
+### 15. Ranking de clientes en access.log
+
+```bash
+bash 15-ranking-access-log.sh /ruta/access.log 10
+```
+
+Cuenta el primer campo de líneas no vacías de un access.log Common/Combined y
+ordena por frecuencia. No valida IPs ni formatos: revisar antes una muestra del
+log. Detrás de un proxy puede aparecer su dirección, no la del visitante.
+No deduce identidad, ataques ni un intervalo temporal: analiza el archivo entero.
+Requiere awk y sort; admite entre 1 y 100 resultados.
+
+### 16. Detectar cambios de puertos TCP locales
+
+```bash
+bash 16-comparar-puertos.sh crear /tmp/puertos-base.txt
+bash 16-comparar-puertos.sh comparar /tmp/puertos-base.txt
+```
+
+Captura endpoints TCP en escucha con ss, omitiendo PID y contadores. No consulta
+máquinas remotas ni verifica firewalls. Crear no sobrescribe una baseline previa;
+comparar no la actualiza. diff devuelve 0 si coinciden, 1 si hay cambios y 2 si
+falla. Que un puerto cambie requiere investigar: no prueba una intrusión.
+Requiere ss (iproute2), awk, sort y diff. Las consultas reflejan el namespace de
+red actual. La comparación debe hacerse en el mismo entorno.

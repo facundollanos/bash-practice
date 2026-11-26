@@ -285,3 +285,62 @@ Sintaxis de los seis scripts y pruebas con repositorios Git temporales, logs de
 texto y manifiestos SHA256 reales. Se verificaron códigos de éxito y error con
 dobles locales de curl y ShellCheck. No se realizaron consultas HTTP reales ni
 se instaló ShellCheck. No se cambiaron repositorios de trabajo del usuario.
+
+## Tanda inspirada en análisis y monitoreo defensivo: 12 a 14
+
+Ejercicios originales basados en temas de los libros, no copias de sus ejemplos.
+
+### 12. Headers HTTP
+
+```bash
+bash 12-revisar-headers.sh https://tu-web.example/
+```
+
+Requiere curl, awk y grep. Hace GET y descarta body. Guarda headers, que pueden
+incluir cookies: mantener privado el reporte. No sigue redirecciones; exige 2xx.
+Revisa presencia no vacía de CSP, X-Content-Type-Options, Referrer-Policy y HSTS
+solo cuando la URL es HTTPS. No valida semántica de políticas: un header presente
+puede ser inseguro y CSP puede no aplicar a una API sin documentos HTML.
+Salida 1 si faltan headers de esta política didáctica; 2 por respuesta no 2xx;
+errores de curl conservan su código. No configura autenticación ni corrige nada.
+Usar solo URLs propias o autorizadas; no incluir secretos en la URL.
+Referencia: https://curl.se/docs/manpage.html
+
+### 13. Configuración efectiva del cliente SSH
+
+```bash
+bash 13-revisar-cliente-ssh.sh mi-servidor
+bash 13-revisar-cliente-ssh.sh practica ./ssh_config_prueba
+```
+
+Requiere OpenSSH. ssh -G muestra la configuración resultante de Host/Match sin
+abrir una sesión SSH. Usar configuración confiable: Match exec puede ejecutar
+comandos locales y CanonicalizeHostname puede generar consultas DNS.
+Revisa StrictHostKeyChecking (acepta yes/true y ask en esta política) y forwarding
+de agente/X11 activados. accept-new se señala para revisión, no significa
+vulnerabilidad confirmada. No prueba autenticación ni evalúa sshd del servidor.
+El reporte puede incluir usuarios, hosts, rutas y comandos de proxy: no compartir
+sin revisarlo. Devuelve 1 ante coincidencias y 0 sin ellas; otros errores deben
+interpretarse según stderr. No cambia configuraciones ni lee claves privadas.
+Referencia: https://man.openbsd.org/ssh
+
+### 14. Fallos de autenticación OpenSSH
+
+```bash
+bash 14-contar-fallos-ssh.sh /ruta/auth.log 5
+```
+
+Analiza logs de texto habituales de sshd con Failed password o Failed publickey,
+extrae dirección tras from y cuenta ocurrencias. No cambia firewall ni bloquea IPs.
+No acepta automáticamente journal JSON o logs de otras aplicaciones. Procesa todo
+el archivo: no equivale a "cinco fallos por minuto". Un resultado vacío también
+puede significar que el formato no coincide. Correlacionar con éxitos de login,
+ventana temporal y contexto; usuarios legítimos también pueden equivocarse.
+Devuelve 1 si alguna dirección alcanza el umbral; 0 si no. Guarda conteos y alertas.
+Requiere awk y sort; los reportes contienen direcciones que pueden ser sensibles.
+
+### Validación de esta tanda
+
+Los seis scripts pasaron bash -n. Se probaron inventario y logs reales de prueba,
+baseline con ss simulado, headers con curl simulado y configuración local con
+ssh -G (sin conexiones SSH). No se consultaron webs ni escanearon redes.
