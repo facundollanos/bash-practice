@@ -229,3 +229,59 @@ incorrecto y fallo de red), bloqueo concurrente y propagación de errores,
 permisos con archivos temporales y certificados generados localmente con OpenSSL.
 Checkov se verificó con un doble de herramienta, no con un análisis real.
 No se descargaron archivos de Internet ni se modificaron servicios.
+
+## Nuevos ejemplos: 09 a 11
+
+### 09. Analizar scripts con ShellCheck
+
+```bash
+bash 09-shellcheck.sh /ruta/scripts
+```
+
+Requiere shellcheck instalado (https://www.shellcheck.net/). Analiza archivos .sh
+ y .bash sin ejecutarlos, excluyendo .git, .venv y node_modules. Puede encontrar
+expansiones sin comillas, errores de shell y construcciones problemáticas.
+No es una auditoría completa de seguridad. Las fuentes externas no se analizan
+ automáticamente: pueden aparecer avisos sobre source, a revisar según contexto.
+Guarda shellcheck.json y conserva el código de salida de la herramienta.
+No reescribe archivos. Una carpeta sin scripts se considera entrada inválida.
+
+### 10. Revisar nombres sensibles en Git
+
+```bash
+bash 10-archivos-sensibles-git.sh /ruta/raiz/repositorio
+```
+
+Consulta el índice de Git: detecta candidatos como .env, claves, certificados y
+estado de Terraform, incluidos archivos preparados sin commit. Excluye ejemplos
+.env.example/.sample/.template. Solo analiza patrones de NOMBRE, no contenido ni
+historial. Un certificado PEM público puede estar versionado legítimamente;
+un secreto en configuracion.py puede pasar inadvertido. Complementa Gitleaks,
+no lo reemplaza. Informa rutas sin imprimir su contenido. No borra archivos ni
+los saca de Git. Si hay credenciales reales expuestas, revocar o rotar.
+Salida 0 sin candidatos y 1 con candidatos; otros fallos requieren revisar stderr.
+
+### 11. Comprobar integridad de artefactos
+
+Generá un manifiesto en un entorno confiable; ejemplo:
+
+```bash
+(cd /ruta/artefactos && sha256sum app.zip config.json > SHA256SUMS)
+bash 11-verificar-manifiesto.sh /ruta/artefactos/SHA256SUMS /ruta/artefactos
+```
+
+Requiere sha256sum y realpath (GNU/Linux). Compara archivos con hashes esperados,
+registra coincidencias y conserva el código original de sha256sum. Archivos
+faltantes, hashes diferentes o formato inválido hacen fallar la comprobación.
+No comprueba archivos que el manifiesto no enumera y sigue enlaces simbólicos.
+El manifiesto debe ser confiable: puede referenciar rutas absolutas o con ..;
+no usar manifiestos desconocidos. SHA256 demuestra coincidencia con el manifiesto,
+no autenticidad del publicador. Si alguien altera ambos, necesitás otra raíz de
+confianza, por ejemplo una firma verificada. No ejecuta ni cambia los artefactos.
+
+### Validación de esta tanda
+
+Sintaxis de los seis scripts y pruebas con repositorios Git temporales, logs de
+texto y manifiestos SHA256 reales. Se verificaron códigos de éxito y error con
+dobles locales de curl y ShellCheck. No se realizaron consultas HTTP reales ni
+se instaló ShellCheck. No se cambiaron repositorios de trabajo del usuario.

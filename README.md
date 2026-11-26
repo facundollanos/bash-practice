@@ -147,3 +147,46 @@ mismo lock en todas las ejecuciones. No borrar el archivo lock mientras hay tare
 activas. El comando debe permanecer en primer plano hasta terminar; no lanzar un
 servicio con &. Los procesos hijos pueden heredar el descriptor del bloqueo.
 Requiere flock (util-linux); pensado para disco local, no almacenamiento de red.
+
+## Nuevos ejemplos: 11 a 13
+
+### 11. Reporte local de Git
+
+```bash
+bash 11-reporte-git.sh /ruta/repositorio /tmp/reportes-git
+```
+
+Guarda estado, estadísticas de cambios preparados y sin preparar, y los últimos
+10 commits. Acepta repositorios sin primer commit. No modifica commits ni hace
+fetch. La información refleja solamente el estado local. Los nombres de archivos
+y mensajes de commit pueden ser sensibles: revisar antes de compartir.
+Requiere Git y mktemp. El directorio de reporte es único por ejecución.
+
+### 12. Resumen de log de texto
+
+```bash
+bash 12-resumir-log.sh ./app.log
+```
+
+Cuenta líneas y coincidencias de palabras ERROR/FATAL, WARN/WARNING e INFO sin
+ distinguir mayúsculas. Una línea puede pertenecer a varias categorías. No deduce
+el nivel real de un evento estructurado y no cuenta excepciones multilínea como
+un único evento. Una frase como "no error" también coincide. Requiere awk.
+Un log vacío es válido; un archivo ilegible produce fallo.
+
+### 13. Consultar varias URLs
+
+Creá urls.txt con una URL HTTP/HTTPS por línea; admite líneas vacías y comentarios
+que empiezan con #. No admite espacios en URLs: codificarlos si corresponden.
+
+```bash
+bash 13-comprobar-urls.sh ./urls.txt
+```
+
+Realiza GET en serie, muestra código HTTP y tiempo total y descarta el body.
+Acepta solo 2xx, no sigue redirecciones, limita cada consulta a 10 segundos y
+continúa con las demás si una falla. Es una foto, no monitoreo continuo.
+No valida el contenido de respuestas ni configura autenticación. No pongas
+tokens o credenciales en URLs: se imprimen en el reporte.
+Salida 0 si todas pasan, 1 si alguna falla, 64 si no hay URLs o los argumentos
+son inválidos. Requiere curl. Ejemplo de integración: guardar stdout como TSV.
