@@ -344,3 +344,57 @@ Requiere awk y sort; los reportes contienen direcciones que pueden ser sensibles
 Los seis scripts pasaron bash -n. Se probaron inventario y logs reales de prueba,
 baseline con ss simulado, headers con curl simulado y configuración local con
 ssh -G (sin conexiones SSH). No se consultaron webs ni escanearon redes.
+
+## Tanda con variables descriptivas: 15 a 17
+
+### 15. Trivy para configuraciones
+
+```bash
+bash 15-trivy-configuracion.sh /ruta/infra
+```
+
+Requiere Trivy. Revisa configuraciones soportadas (Terraform, Kubernetes,
+Dockerfiles, entre otras), filtrando HIGH/CRITICAL. Puede descargar checks.
+No aplica infraestructura ni corrige archivos. 10 indica hallazgos bajo esta
+política; otros errores requieren leer stderr. Configuraciones y exclusiones
+locales pueden afectar la cobertura. Es complementario o alternativo a Checkov,
+no prueba de cobertura total. Reporte: trivy-configuracion.json.
+Referencia: https://trivy.dev/docs/latest/
+
+### 16. Verificar certificado contra una CA y un hostname
+
+```bash
+bash 16-validar-confianza-certificado.sh servidor.pem ca-confiable.pem api.example.com
+# Si la cadena necesita intermedios:
+bash 16-validar-confianza-certificado.sh servidor.pem ca-confiable.pem api.example.com intermedios.pem
+```
+
+Requiere OpenSSL 3.x. Usa únicamente el archivo de CA indicado, comprueba cadena,
+fechas, propósito sslserver y nombre DNS. No abre conexiones ni valida que el
+servidor esté sirviendo ese certificado. La CA debe ser confiable por otro medio:
+aceptar una CA arbitraria elimina el valor de esta comprobación. El certificado
+final debe ser el primero/único del archivo servidor.pem. No comprueba revocación,
+algoritmos negociados ni renovación. No usar IP en lugar de hostname DNS en este
+ ejemplo (se necesitaría -verify_ip). Conserva salida y código de OpenSSL.
+Referencia: https://docs.openssl.org/3.0/man1/openssl-verify/
+
+### 17. Revisar permisos de una clave privada
+
+```bash
+bash 17-revisar-permisos-clave.sh "$HOME/.ssh/id_ed25519"
+```
+
+Revisa metadatos: propietario actual, lectura para propietario, ausencia de
+permisos de grupo/otros y bits especiales. No lee ni copia contenido, no cambia
+permisos y rechaza enlaces. 400 y 600 pasan esta política. No demuestra que el
+archivo contenga una clave, no inspecciona ACL, directorios ascendientes,
+cifrado de clave ni otros accesos de usuarios privilegiados. 1 ante hallazgos.
+Requiere GNU stat. No ejecutar con sudo para revisar una clave de tu usuario:
+cambiaría el UID esperado. Reporte privado en permisos.txt.
+
+### Validación de esta tanda
+
+Sintaxis bash -n en los seis scripts; JSON y ejecución paralela con archivos de
+prueba, permisos sobre archivos temporales y certificados locales reales con
+OpenSSL. Se probaron curl y Trivy con dobles locales: sin peticiones HTTP ni
+análisis Trivy real. No se instalaron herramientas ni se modificaron claves.

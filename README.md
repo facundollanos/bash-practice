@@ -232,3 +232,46 @@ comparar no la actualiza. diff devuelve 0 si coinciden, 1 si hay cambios y 2 si
 falla. Que un puerto cambie requiere investigar: no prueba una intrusión.
 Requiere ss (iproute2), awk, sort y diff. Las consultas reflejan el namespace de
 red actual. La comparación debe hacerse en el mismo entorno.
+
+## Tanda con variables descriptivas: 17 a 19
+
+Los nombres explícitos son una buena práctica: cantidad_archivos, ruta_archivo_json,
+codigo_respuesta_http y directorio_ejecucion muestran la intención sin abreviaturas.
+
+### 17. Validar JSON
+
+```bash
+bash 17-validar-archivos-json.sh /ruta/configuraciones
+```
+
+Recorre archivos .json y los parsea con python3 -m json.tool. No los modifica.
+0: todos parsean; 1: alguno falla; 64: no hay archivos o entrada inválida.
+Es validación de sintaxis según el parser de Python, NO de JSON Schema ni de
+campos obligatorios. Python puede aceptar NaN/Infinity y claves duplicadas;
+no usar como validador estricto de interoperabilidad JSON. No sigue enlaces.
+
+### 18. Medir tiempos HTTP
+
+```bash
+bash 18-medir-respuesta-http.sh http://localhost:8000/metrics 3
+```
+
+Muestras secuenciales, separadas por un segundo, cada una con un proceso curl
+nuevo. No es una prueba de carga. Muestra código y tiempos en segundos; conexión,
+primer byte y total son ACUMULADOS desde el inicio, no duraciones independientes.
+No sigue redirecciones; solo 2xx se considera éxito. 1 si alguna muestra falla.
+Los errores de red pueden dejar tiempos parciales. No valida body. Requiere curl.
+
+### 19. Ejecutar scripts en paralelo
+
+```bash
+bash 19-ejecutar-scripts-paralelos.sh /tmp/reportes ./tarea-a.sh ./tarea-b.sh
+```
+
+Ejecuta scripts Bash confiables SIN argumentos, en lotes de hasta dos. Guarda
+stdout, stderr, código de salida y correspondencia entre número y ruta.
+Las tareas deben ser independientes y terminar en primer plano. No usar con dos
+migraciones o escrituras incompatibles. Conserva el directorio actual del llamador;
+no cambia al directorio de cada script. Una tarea fallida no evita las siguientes;
+al final devuelve 1 si hubo fallos. Este ejemplo no implementa cancelación de
+árboles de procesos, timeouts ni límites de recursos; no usar con tareas infinitas.
